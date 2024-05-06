@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'profile.dart'; // Import file profile.dart
 
 class HomePage extends StatelessWidget {
   @override
@@ -10,6 +11,18 @@ class HomePage extends StatelessWidget {
           height: 40,
           width: 120, // Perbesar lebarnya
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.account_circle),
+            onPressed: () {
+              // Navigasi ke halaman profil saat ikon diklik
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfilePage()),
+              );
+            },
+          ),
+        ],
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
