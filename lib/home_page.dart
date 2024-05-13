@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'profile.dart'; // Import file profile.dart
+import 'add_anggota.dart'; // Import file add_anggota.dart
 
 class HomePage extends StatelessWidget {
   @override
@@ -99,6 +100,16 @@ class HomePage extends StatelessWidget {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigasi ke halaman tambah anggota saat tombol ditekan
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddAnggotaPage()),
+          );
+        },
+        child: Icon(Icons.add),
       ),
     );
   }
