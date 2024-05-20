@@ -1,190 +1,134 @@
-import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
-import 'anggota_detail_page.dart';
 
-class AddAnggotaPage extends StatelessWidget {
-  final TextEditingController nomorIndukController = TextEditingController();
-  final TextEditingController namaController = TextEditingController();
-  final TextEditingController alamatController = TextEditingController();
-  final TextEditingController tanggalLahirController = TextEditingController();
-  final TextEditingController teleponController = TextEditingController();
+class AddAnggotaPage extends StatefulWidget {
+  @override
+  _AddAnggotaPageState createState() => _AddAnggotaPageState();
+}
 
-  final storage = GetStorage();
+final _storage = GetStorage();
+final _dio = Dio();
+final _apiUrl = 'https://mobileapis.manpits.xyz/api';
+String nomer_induk = '';
+String telepon = '';
+String nama = '';
+String alamat = '';
+String tgl_lahir = '';
 
-  Future<void> _addAnggota(BuildContext context) async {
-    final String token = storage.read('token');
-    final String baseUrl = 'https://mobileapis.manpits.xyz/api';
-
-    final dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      headers: {
-        'Authorization': 'Bearer $token',
+void AddAnggota(context, nomer_induk, telepon, nama, alamat, tgl_lahir) async {
+  print('createAnggota');
+  print('nomer_induk: ${nomer_induk}');
+  print('telepon: ${telepon}');
+  print('nama: ${nama}');
+  print('alamat: ${alamat}');
+  print('tgl_lahir: ${tgl_lahir}');
+  try {
+    final _response = await _dio.post(
+      '${_apiUrl}/anggota',
+      data: {
+        'nomor_induk': nomer_induk,
+        'nama': nama,
+        'alamat': alamat,
+        'tgl_lahir': tgl_lahir,
+        'telepon': telepon,
+        'status_aktif': 1,
       },
-    ));
-
-    try {
-      FormData formData = FormData.fromMap({
-        'nomor_induk': nomorIndukController.text,
-        'nama': namaController.text,
-        'alamat': alamatController.text,
-        'tgl_lahir': tanggalLahirController.text,
-        'telepon': teleponController.text,
-      });
-
-      final response = await dio.post(
-        '/anggota',
-        data: formData,
-      );
-
-      if (response.statusCode == 200) {
-        final idAnggotaBaru = response.data['id'];
-        // Save the ID of the newly added anggota to local storage
-        storage.write('lastAddedAnggotaId', idAnggotaBaru);
-        // Clear input fields after successfully adding anggota
-        nomorIndukController.clear();
-        namaController.clear();
-        alamatController.clear();
-        tanggalLahirController.clear();
-        teleponController.clear();
-        // Show success dialog
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Anggota Added Successfully'),
-            content: Text('Anggota has been successfully added!'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('OK'),
-              ),
-            ],
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add anggota. Please try again.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to add anggota: $e'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
-  Future<void> _displayAnggotaData(BuildContext context) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(
-        child: CircularProgressIndicator(),
+      options: Options(
+        headers: {'Authorization': 'Bearer ${_storage.read('token')}'},
       ),
     );
+    print(_response.data);
+    Navigator.pop(context, true); // Pass a result indicating success
+  } on DioException catch (e) {
+    print('${e.response} - ${e.response?.statusCode}');
+  }
+}
 
-    final String token = storage.read('token');
-    final String baseUrl = 'https://mobileapis.manpits.xyz/api';
-    final int idAnggota = storage.read('lastAddedAnggotaId');
+class _AddAnggotaPageState extends State<AddAnggotaPage> {
+  TextEditingController nomorIndukController = TextEditingController();
+  TextEditingController namaController = TextEditingController();
+  TextEditingController alamatController = TextEditingController();
+  TextEditingController tanggalLahirController = TextEditingController();
+  TextEditingController teleponController = TextEditingController();
 
-    final dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    ));
-
-    try {
-      final response = await dio.get('/anggota/$idAnggota');
-
-      if (response.statusCode == 200) {
-        Navigator.of(context).pop();
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AnggotaDetailPage(anggotaData: response.data),
-          ),
-        );
-      } else {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Failed to fetch anggota data: ${response.statusCode}'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to fetch anggota data: $e'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
+  @override
+  void dispose() {
+    nomorIndukController.dispose();
+    namaController.dispose();
+    alamatController.dispose();
+    tanggalLahirController.dispose();
+    teleponController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Anggota'),
+        title: Text('Tambah Anggota'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        padding: const EdgeInsets.all(8.0),
+        child: ListView(
           children: [
             TextField(
+              decoration: InputDecoration(labelText: 'Nomor Induk'),
               controller: nomorIndukController,
-              decoration: InputDecoration(
-                labelText: 'Nomor Induk',
-              ),
+              onChanged: (value) {
+                setState(() {
+                  nomer_induk = value;
+                });
+              },
             ),
-            SizedBox(height: 20.0),
             TextField(
+              decoration: InputDecoration(labelText: 'Nama'),
               controller: namaController,
-              decoration: InputDecoration(
-                labelText: 'Nama',
-              ),
+              onChanged: (value) {
+                setState(() {
+                  nama = value;
+                });
+              },
             ),
-            SizedBox(height: 20.0),
             TextField(
+              decoration: InputDecoration(labelText: 'Alamat'),
               controller: alamatController,
-              decoration: InputDecoration(
-                labelText: 'Alamat',
-              ),
+              onChanged: (value) {
+                setState(() {
+                  alamat = value;
+                });
+              },
             ),
-            SizedBox(height: 20.0),
             TextField(
+              decoration: InputDecoration(labelText: 'Tanggal Lahir'),
               controller: tanggalLahirController,
-              decoration: InputDecoration(
-                labelText: 'Tanggal Lahir (YYYY-MM-DD)',
-              ),
+              onChanged: (value) {
+                setState(() {
+                  tgl_lahir = value;
+                });
+              },
             ),
-            SizedBox(height: 20.0),
             TextField(
+              decoration: InputDecoration(labelText: 'Telepon'),
               controller: teleponController,
-              decoration: InputDecoration(
-                labelText: 'Telepon',
-              ),
+              onChanged: (value) {
+                setState(() {
+                  telepon = value;
+                });
+              },
             ),
-            SizedBox(height: 20.0),
             ElevatedButton(
-              onPressed: () => _addAnggota(context),
-              child: Text('Add Anggota'),
-            ),
-            SizedBox(height: 20.0),
-            ElevatedButton(
-              onPressed: () => _displayAnggotaData(context),
-              child: Text('Display Anggota Data'),
+              onPressed: () {
+                AddAnggota(
+                  context,
+                  nomorIndukController.text,
+                  teleponController.text,
+                  namaController.text,
+                  alamatController.text,
+                  tanggalLahirController.text,
+                );
+              },
+              child: Text('Simpan'),
             ),
           ],
         ),

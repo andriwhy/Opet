@@ -1,8 +1,72 @@
 import 'package:flutter/material.dart';
 import 'profile.dart'; // Import file profile.dart
 import 'add_anggota.dart'; // Import file add_anggota.dart
+import 'edit_anggota.dart'; // Import file edit_anggota_page.dart
+import 'package:dio/dio.dart';
+import 'package:get_storage/get_storage.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final _storage = GetStorage();
+  final _dio = Dio();
+  final _apiUrl = 'https://mobileapis.manpits.xyz/api';
+  List<dynamic> _anggotaList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAnggota();
+  }
+
+  Future<void> _fetchAnggota() async {
+    try {
+      final response = await _dio.get(
+        '$_apiUrl/anggota',
+        options: Options(
+          headers: {'Authorization': 'Bearer ${_storage.read('token')}'},
+        ),
+      );
+      setState(() {
+        _anggotaList = response.data['data']['anggotas'] ?? [];
+      });
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mendapatkan daftar anggota'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteAnggota(int id) async {
+    try {
+      await _dio.delete(
+        '$_apiUrl/anggota/$id',
+        options: Options(
+          headers: {'Authorization': 'Bearer ${_storage.read('token')}'},
+        ),
+      );
+      _fetchAnggota();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Anggota berhasil dihapus'),
+        ),
+      );
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menghapus anggota'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,7 +93,7 @@ class HomePage extends StatelessWidget {
         elevation: 0,
       ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -40,60 +104,68 @@ class HomePage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
               Image.asset(
                 'assets/images/groupcat.png',
                 height: 150,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: TextField(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: const TextField(
                   decoration: InputDecoration(
                     hintText: 'Search for a pet',
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.7),
+                    fillColor: Colors.white70,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
                       borderSide: BorderSide.none,
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
                     _buildItem('Siena', 'assets/images/cat1.jpg'),
-                    SizedBox(width: 10), // Jarak antara box
+                    const SizedBox(width: 10), // Jarak antara box
                     _buildItem('Comcom', 'assets/images/cat2.jpg'),
-                    SizedBox(width: 10), // Jarak antara box
+                    const SizedBox(width: 10), // Jarak antara box
                     _buildItem('Nyaw', 'assets/images/cat3.png'),
                   ],
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Customer Reviews',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     _buildReviewBox(
                         'John Doe', 'Great pet, very friendly and playful.'),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     _buildReviewBox(
                         'Jane Smith', 'The cat is adorable, my kids love it!'),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'List Anggota',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildAnggotaList(),
                   ],
                 ),
               ),
@@ -102,21 +174,25 @@ class HomePage extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           // Navigasi ke halaman tambah anggota saat tombol ditekan
-          Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => AddAnggotaPage()),
           );
+
+          if (result == true) {
+            _fetchAnggota(); // Refresh list after adding
+          }
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }
 
   Widget _buildItem(String title, String imagePath) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -125,7 +201,7 @@ class HomePage extends StatelessWidget {
             color: Colors.grey.withOpacity(0.5),
             spreadRadius: 2,
             blurRadius: 5,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -138,15 +214,15 @@ class HomePage extends StatelessWidget {
             height: 100,
             fit: BoxFit.cover,
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
             title, // Ganti nama pet
-            style: TextStyle(
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 5),
-          Text(
+          const SizedBox(height: 5),
+          const Text(
             '\$100',
             style: TextStyle(
               color: Color(0xFFF5A9A9),
@@ -160,7 +236,7 @@ class HomePage extends StatelessWidget {
   Widget _buildReviewBox(String name, String review) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(15),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -169,7 +245,7 @@ class HomePage extends StatelessWidget {
             color: Colors.grey.withOpacity(0.5),
             spreadRadius: 2,
             blurRadius: 5,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -178,19 +254,67 @@ class HomePage extends StatelessWidget {
         children: [
           Text(
             name,
-            style: TextStyle(
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 5),
+          const SizedBox(height: 5),
           Text(
             review,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.grey,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAnggotaList() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _anggotaList.length,
+      itemBuilder: (context, index) {
+        final anggota = _anggotaList[index];
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFB9898),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: ListTile(
+            title: Text(
+              anggota['nama'],
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            subtitle: Text(anggota['telepon']),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditAnggotaPage(),
+                        settings: RouteSettings(arguments: anggota),
+                      ),
+                    ).then((_) => _fetchAnggota());
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _deleteAnggota(anggota['id']),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

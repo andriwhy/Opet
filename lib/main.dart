@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 //import 'package:get_storage/get_storage.dart';
-import 'login_page.dart';
-import 'home_page.dart';
-import 'signup_page.dart';
-import 'profile.dart';
-import 'add_anggota.dart';
+import 'package:deapps/login_page.dart';
+import 'package:deapps/home_page.dart';
+import 'package:deapps/signup_page.dart';
+import 'package:deapps/profile.dart';
+import 'package:deapps/add_anggota.dart';
+import 'package:deapps/edit_anggota.dart';
 //import 'anggota_detail_page.dart'; // Import halaman detail anggota
 
 void main() {
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignUpPage(),
         '/profile': (context) => ProfilePage(),
         '/add': (context) => AddAnggotaPage(),
+        '/edit': (context) => EditAnggotaPage(),
         //// Tambahkan rute untuk halaman detail anggota
       },
       // onGenerateRoute: (settings) {
